@@ -1,0 +1,151 @@
+diff -rupNB cccc-3.1.4//cccc/cccc_utl.cc cccc-alert//cccc/cccc_utl.cc
+--- cccc-3.1.4//cccc/cccc_utl.cc	2011-05-27 14:18:51.000000000 +0200
++++ cccc-alert//cccc/cccc_utl.cc	2011-05-27 14:19:39.000000000 +0200
+@@ -362,6 +362,9 @@ void ParseStore::record_module_extent(in
+     insert_extent(module_line,startLine,endLine,
+ 	 description,flags(),ut,true);
+     prj->add_module(module_line);
++    
++    printf("+++ Module: %s, Start: %d, End: %d\n",
++           moduleName.c_str(), startLine, endLine);
+   }
+ }
+ 
+@@ -398,7 +401,11 @@ void ParseStore::record_function_extent(
+ 
+     insert_extent(function_line,startLine,endLine,
+      description,baseFlags,ut,true);
+-    prj->add_member(function_line);
++    prj->add_member(function_line);  
++    
++    printf("+++ Function: %s%s, Module: %s, Start: %d, End: %d\n",
++           memberName.c_str(), paramList.c_str(), mappedModuleName.c_str(),
++           startLine, endLine);
+   }
+ }
+ 
+diff -rupNB cccc-3.1.4//cccc/java.g cccc-alert//cccc/java.g
+--- cccc-3.1.4//cccc/java.g	2011-05-27 14:18:51.000000000 +0200
++++ cccc-alert//cccc/java.g	2011-05-27 14:19:20.000000000 +0200
+@@ -189,6 +189,14 @@ inline void endOfCommentLine(JLexer &lex
+ #token COMLINE_ANYTHING "~[\n]" << skip(); >>
+ #lexclass START
+ 
++#token COMPREPO "\@" << mode(COMPREPRO_LINE); skip(); >>
++#lexclass COMPREPRO_LINE
++#token DOS_COMPREPRO_END  "\r\n" << endOfCommentLine(*this); mode(START); >>
++#token MAC_COMPREPRO_END  "\r" << endOfCommentLine(*this); mode(START); >>
++#token UNIX_COMPREPRO_END  "\n" << endOfCommentLine(*this); mode(START); >>
++#token COMPREPRO_ANYTHING "~[\n]" << skip(); >>
++#lexclass START
++
+ #token COMMULTI "/\*" << mode(COMMENT_MULTI); skip(); >>
+ #lexclass COMMENT_MULTI
+ #token COMMULTI_END "\*/" << 
+@@ -437,11 +445,14 @@ modifiers[Visibility& v]
+ 	:	( modifier[v] )*
+ 	;
+ 
++typeParameters
++    : (lb:LESSTHAN identifier (COMMA identifier)* GT)*
++    ;
+ 
+ // A type specification is a type name with possible brackets afterwards
+ //   (which would make it an array type).
+ typeSpec
+-	: classTypeSpec
++	: (classTypeSpec typeParameters)
+ 	| builtInTypeSpec
+ 	;
+ 
+@@ -480,7 +491,7 @@ builtInType
+ // A (possibly-qualified) java identifier.  We start with the first IDENT
+ //   and expand its name by adding dots and following IDENTS
+ identifier
+-	:	IDENT  ( DOT IDENT )*
++	:	IDENT  (( DOT IDENT )* | DOT DOT DOT)
+ 	;
+ 
+ // We replicate typeSpec, classTypeSpec, builtIntTypeSpec and identifier 
+@@ -487,8 +498,9 @@ identifier
+ // with variants which receive and set a reference to a string
+ // describing the builtin type. typeSpec also has a boolean indicating 
+ // whether the described type is built in or not.
++
+ typeSpec2[string& typeString, bool& isBuiltIn]
+-	: classTypeSpec2[typeString] << isBuiltIn=false; >>
++	: (classTypeSpec2[typeString] typeParameters << isBuiltIn=false; >>)
+ 	| builtInTypeSpec2[typeString] << isBuiltIn=true; >>
+ 	;
+ 
+@@ -508,8 +520,9 @@ builtInTypeSpec2[string& typeString]
+ identifier2[string& scope]
+ 	:	id1:IDENT << scope=pu->scopeCombine(scope,$id1->getText()); >>
+ 		( 
+-			DOT id2:IDENT 
++			(DOT id2:IDENT
+ 			<< scope=pu->scopeCombine(scope,$id2->getText()); >>
++			 | DOT DOT DOT)
+ 		)* 
+ 	;
+ identifierStar
+@@ -567,7 +580,7 @@ superClassClause[const string& className
+ 			string parentName;
+ 		>>
+ 		{ 
+-			EXTENDS identifier2[parentName] 
++			EXTENDS identifier2[parentName] typeParameters
+ 			<<
+ 				ps->record_userel_extent(
+ 					startLine,startLine,
+@@ -666,25 +679,25 @@ field[const string& className]
+ 	string scope=className, typeName; 
+ 	bool isBuiltIn;
+ 	Visibility v=vDONTKNOW;
+-	int startLine=LT(1)->getLine(); 
++	int startLine=LT(1)->getLine();
+ >>
+ 	// method, constructor, or variable declaration
+ 		mods:modifiers[v]
+-		(	
+-			// constructor
+-			ctorDefinition[className,v] 
++		(	// constructor
++			ctorDefinition[className,v]
+ 		|	cd:classDefinition[scope]             // inner class
+ 		|	id:interfaceDefinition[scope]         // inner interface
+ 			// method or variable declaration(s)
+-		|	t:typeSpec2[typeName,isBuiltIn] 
++		|       t:typeSpec2[typeName,isBuiltIn] 
+ 			typedDeclaration[className,typeName,isBuiltIn,v,startLine]
++			
+ 		)
+ 
+     // "static { ... }" class initializer
+-	|	STATIC s3:compoundStatement
++    | 	STATIC s3:compoundStatement
+ 
+     // "{ ... }" instance initializer
+-	|	compoundStatement
++    |   compoundStatement
+ 	;
+ 
+ typedDeclaration
+@@ -692,7 +705,7 @@ typedDeclaration
+ 	 bool isBuiltIn, Visibility v, int startLine] 
+ 	:
+ 		    methodDefinition[className,typeName,isBuiltIn,v,startLine]
+-		|	variableDefinitions[className,typeName,isBuiltIn,v,startLine] SEMI
++		|   variableDefinitions[className,typeName,isBuiltIn,v,startLine] SEMI
+ 	;
+ 
+ // The next rule covers that part of a method definition which
+@@ -1381,7 +1394,7 @@ primaryExpression
+  *  
+  */
+ newExpression
+-	:	"new" type
++	:	"new" type typeParameters
+ 		(	LPAREN argList RPAREN {classBlock[d1]}
+ 
+ 			//java 1.1
