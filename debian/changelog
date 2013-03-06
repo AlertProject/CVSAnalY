@@ -1,3 +1,15 @@
+cvsanaly (2.1.2-2alert) unstable; urgency=low
+
+  * Dependencies updated.
+
+ -- Roberto Andradas <randradas@libresoft.es>  Thu, 14 Feb 2013 20:02:46 +0100
+
+cvsanaly (2.1.2-1alert) unstable; urgency=low
+
+  * Debian package for Alert project
+
+ -- Roberto Andradas <randradas@libresoft.es>  Mon, 11 Feb 2013 17:11:21 +0100
+
 cvsanaly (2.1.0-1) unstable; urgency=low
 
   * New upstream bugfix release:
