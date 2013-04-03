@@ -819,7 +819,8 @@ class Metrics (Extension):
                                 "halstead_md integer," +
                                 "FOREIGN KEY (file_id) REFERENCES tree(id)," +
                                 "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
-                                ") CHARACTER SET=utf8")
+                                ") ENGINE=MyISAM" +
+                                " CHARACTER SET=utf8")
                 cursor.execute ("CREATE TABLE modules_src (" +
                                 "id integer primary key not null," +
                                 "file_id integer," +
@@ -829,7 +830,8 @@ class Metrics (Extension):
                                 "end_line integer," +
                                 "FOREIGN KEY (file_id) REFERENCES tree(id)," +
                                 "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
-                                ") CHARACTER SET=utf8")
+                                ") ENGINE=MyISAM" +
+                                " CHARACTER SET=utf8")
                 cursor.execute ("CREATE TABLE functions_src (" +
                                 "id integer primary key not null," +
                                 "file_id integer," +
@@ -841,7 +843,8 @@ class Metrics (Extension):
                                 "FOREIGN KEY (file_id) REFERENCES tree(id)," +
                                 "FOREIGN KEY (commit_id) REFERENCES scmlog(id)," +
                                 "FOREIGN KEY (module_id) REFERENCES modules_src(id)" +
-                                ") CHARACTER SET=utf8")
+                                ") ENGINE=MyISAM" +
+                                " CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
                     cursor.close ()
