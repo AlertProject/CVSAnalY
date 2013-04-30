@@ -37,7 +37,7 @@ class JobPool:
             self.done = AsyncQueue ()
             
         for i in range (poolsize):
-            rep = rh.create_repository (repo.get_type (), repo.get_uri ())
+            rep = repo.copy ()
             thread = threading.Thread (target=self._job_thread, args=(rep, repo_uri))
             thread.setDaemon (True)
             thread.start ()
