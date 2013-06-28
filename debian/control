@@ -1,7 +1,7 @@
 Source: cvsanaly
 Section: misc
 Priority: optional
-Maintainer: Roberto Andradas <randradas@libresoft.es>
+Maintainer: Santiago Dueñas <sduenas@libresoft.es>
 Build-Depends: cdbs, debhelper (>= 7.0.50~), python-support, python
 Standards-Version: 3.9.2
 Homepage: http://github.com/AlertProject/CVSAnalY
@@ -9,7 +9,7 @@ XS-Python-Version: >= 2.6
 
 Package: cvsanaly
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python (>= 2.6), pkg-config, python-mysqldb, repositoryhandler(>= 0.5), cvs|subversion|git, cccc-alert
+Depends: ${misc:Depends}, ${python:Depends}, python (>= 2.6), python-mysqldb, repositoryhandler(>= 0.5.1), cvs|subversion|git, cccc-alert
 Suggests: cmetrics, pymetrics, sloccount, diffstat
 Description: source code repository analisys tool.
  Cvsanaly is a tool that extracts information from source code repositories
